@@ -81,6 +81,27 @@ install(EXPORT mcp_mqtt_server-targets
     DESTINATION lib/cmake/mcp_mqtt_server
 )
 
+# Generate and install config file for find_package
+include(CMakePackageConfigHelpers)
+
+configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/mcp_mqtt_serverConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/mcp_mqtt_serverConfig.cmake"
+    INSTALL_DESTINATION lib/cmake/mcp_mqtt_server
+)
+
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/mcp_mqtt_serverConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/mcp_mqtt_serverConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/mcp_mqtt_serverConfigVersion.cmake"
+    DESTINATION lib/cmake/mcp_mqtt_server
+)
+
 # Build examples
 if(BUILD_EXAMPLES AND PahoMqttCpp_FOUND)
     add_subdirectory(examples)

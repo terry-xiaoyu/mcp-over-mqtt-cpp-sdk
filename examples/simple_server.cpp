@@ -70,7 +70,7 @@ public:
             mqtt::properties props;
             props.add(mqtt::property(mqtt::property::SESSION_EXPIRY_INTERVAL, 0));
             props.add(mqtt::property(mqtt::property::USER_PROPERTY,
-                std::make_pair(std::string("MCP-COMPONENT-TYPE"), std::string("mcp-server"))));
+                "MCP-COMPONENT-TYPE", "mcp-server"));
             connBuilder.properties(props);
 
             auto connOpts = connBuilder.finalize();
@@ -118,8 +118,7 @@ public:
             // Add user properties
             mqtt::properties props;
             for (const auto& [key, value] : userProps) {
-                props.add(mqtt::property(mqtt::property::USER_PROPERTY,
-                    std::make_pair(key, value)));
+                props.add(mqtt::property(mqtt::property::USER_PROPERTY, key, value));
             }
             msg->set_properties(props);
 
@@ -164,10 +163,10 @@ public:
             const auto& props = msg->get_properties();
             if (props.contains(mqtt::property::USER_PROPERTY)) {
                 try {
-                    auto userProps = props.get<std::vector<mqtt::string_pair>>(
-                        mqtt::property::USER_PROPERTY);
+                    auto userProps = mqtt::get<std::vector<mqtt::string_pair>>(
+                        props, mqtt::property::USER_PROPERTY);
                     for (const auto& prop : userProps) {
-                        inMsg.userProperties[prop.first] = prop.second;
+                        inMsg.userProperties[std::string(std::get<0>(prop))] = std::string(std::get<1>(prop));
                     }
                 } catch (...) {}
             }

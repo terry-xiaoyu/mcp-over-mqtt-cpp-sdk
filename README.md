@@ -294,8 +294,29 @@ See [examples/simple_server.cpp](examples/simple_server.cpp) for a complete exam
 cd mcp_server_cpp_sdk/build
 make simple_server
 
-# Run
+# Run directly from build directory (RPATH is set automatically by CMake)
 ./examples/simple_server [broker_address] [server_id] [server_name]
+./examples/simple_server tcp://localhost:1883 demo-server-001 demo/calculator
+```
+
+If you see `error while loading shared libraries: libmcp_mqtt_server.so`, use one of the following methods:
+
+**Method 1: Install the library to system path**
+```bash
+cd build
+sudo make install
+sudo ldconfig        # Linux only
+```
+
+**Method 2: Set library search path temporarily**
+```bash
+# Linux
+export LD_LIBRARY_PATH=$(pwd):$LD_LIBRARY_PATH
+
+# macOS
+export DYLD_LIBRARY_PATH=$(pwd):$DYLD_LIBRARY_PATH
+
+# Then run
 ./examples/simple_server tcp://localhost:1883 demo-server-001 demo/calculator
 ```
 
@@ -318,6 +339,46 @@ make simple_server
 | `ping` | Health check |
 | `tools/list` | List available tools |
 | `tools/call` | Invoke a tool |
+
+## Logging
+
+The SDK includes a built-in logger with runtime-configurable log levels. By default, the log level is `INFO`.
+
+### Log Levels
+
+| Level | Description |
+|-------|-------------|
+| `DEBUG` | Detailed internal operations: MQTT message routing, JSON parsing, topic subscriptions |
+| `INFO` | Key lifecycle events: server start/stop, client connect/disconnect, tool calls |
+| `WARN` | Unexpected but recoverable situations: unknown methods, missing sessions |
+| `ERROR` | Failures: parse errors, connection lost, tool execution errors |
+| `OFF` | Disable all logging |
+
+### Setting Log Level
+
+```cpp
+#include <mcp_mqtt.h>
+using namespace mcp_mqtt;
+
+// Enable debug logging (shows all messages)
+Logger::setLevel(LogLevel::DEBUG);
+
+// Default: INFO level
+Logger::setLevel(LogLevel::INFO);
+
+// Only warnings and errors
+Logger::setLevel(LogLevel::WARN);
+
+// Disable all SDK logging
+Logger::setLevel(LogLevel::OFF);
+```
+
+The log level can be changed at any time during runtime. Output format:
+
+```
+2025-01-15 14:30:00.123 [DEBUG] [mcp] Received MQTT message: topic=$mcp-rpc/..., payload=...
+2025-01-15 14:30:00.124 [INFO ] [mcp] Tool call: tool=add, client=client-001
+```
 
 ## Thread Safety
 

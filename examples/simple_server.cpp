@@ -212,6 +212,9 @@ int main(int argc, char* argv[]) {
     if (argc > 2) serverId = argv[2];
     if (argc > 3) serverName = argv[3];
 
+    // Enable debug logging for the MCP SDK
+    Logger::setLevel(LogLevel::DEBUG);
+
     std::cout << "=== MCP over MQTT Server Example ===" << std::endl;
     std::cout << "Broker: " << brokerAddress << std::endl;
     std::cout << "Server ID: " << serverId << std::endl;

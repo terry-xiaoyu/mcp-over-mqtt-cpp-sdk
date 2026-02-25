@@ -16,6 +16,7 @@
  */
 
 #include "mcp_mqtt/types.h"
+#include "mcp_mqtt/logger.h"
 #include "mcp_mqtt/json_rpc.h"
 #include "mcp_mqtt/mqtt_interface.h"
 #include "mcp_mqtt/tool_manager.h"

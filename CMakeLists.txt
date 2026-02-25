@@ -5,6 +5,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# RPATH settings: allow executables to find shared libraries
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set(CMAKE_INSTALL_RPATH_USE_LINK_ORIGIN TRUE)
+
 # macOS: Ensure C++ standard library headers are found
 if(APPLE)
     # Get SDK path
@@ -43,6 +49,7 @@ set(SDK_SOURCES
 set(SDK_HEADERS
     include/mcp_mqtt.h
     include/mcp_mqtt/types.h
+    include/mcp_mqtt/logger.h
     include/mcp_mqtt/json_rpc.h
     include/mcp_mqtt/mqtt_interface.h
     include/mcp_mqtt/mcp_server.h

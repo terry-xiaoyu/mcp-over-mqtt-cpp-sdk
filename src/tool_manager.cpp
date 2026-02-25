@@ -1,4 +1,5 @@
 #include "mcp_mqtt/tool_manager.h"
+#include "mcp_mqtt/logger.h"
 
 namespace mcp_mqtt {
 
@@ -40,14 +41,17 @@ ToolCallResult ToolManager::callTool(const std::string& name, const nlohmann::js
 
     auto it = handlers_.find(name);
     if (it == handlers_.end()) {
+        MCP_LOG_ERROR("Tool not found: " << name);
         return ToolCallResult::error("Tool not found: " + name);
     }
 
     try {
         return it->second(arguments);
     } catch (const std::exception& e) {
+        MCP_LOG_ERROR("Tool execution error: tool=" << name << ", error=" << e.what());
         return ToolCallResult::error(std::string("Tool execution error: ") + e.what());
     } catch (...) {
+        MCP_LOG_ERROR("Unknown error during tool execution: tool=" << name);
         return ToolCallResult::error("Unknown error during tool execution");
     }
 }

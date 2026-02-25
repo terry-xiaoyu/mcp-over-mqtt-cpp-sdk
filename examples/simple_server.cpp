@@ -91,7 +91,10 @@ public:
         try {
             mqtt::subscribe_options subOpts;
             subOpts.set_no_local(noLocal);
-            client_->subscribe(topic, qos, subOpts)->wait();
+            // Do NOT use ->wait() here: subscribe() may be called from within
+            // a Paho callback (message_arrived), and ->wait() would deadlock
+            // because the SUBACK is processed on the same (blocked) thread.
+            client_->subscribe(topic, qos, subOpts);
             return true;
         } catch (const mqtt::exception& e) {
             std::cerr << "Subscribe error: " << e.what() << std::endl;
@@ -101,7 +104,8 @@ public:
 
     bool unsubscribe(const std::string& topic) override {
         try {
-            client_->unsubscribe(topic)->wait();
+            // Do NOT use ->wait() here for the same deadlock reason as subscribe().
+            client_->unsubscribe(topic);
             return true;
         } catch (const mqtt::exception& e) {
             std::cerr << "Unsubscribe error: " << e.what() << std::endl;
@@ -159,16 +163,17 @@ public:
             inMsg.qos = msg->get_qos();
             inMsg.retained = msg->is_retained();
 
-            // Extract user properties
+            // Extract user properties using C-level API for cross-version compatibility
             const auto& props = msg->get_properties();
-            if (props.contains(mqtt::property::USER_PROPERTY)) {
-                try {
-                    auto userProps = mqtt::get<std::vector<mqtt::string_pair>>(
-                        props, mqtt::property::USER_PROPERTY);
-                    for (const auto& prop : userProps) {
-                        inMsg.userProperties[std::string(std::get<0>(prop))] = std::string(std::get<1>(prop));
-                    }
-                } catch (...) {}
+            const auto& cProps = props.c_struct();
+            for (int i = 0; i < cProps.count; ++i) {
+                if (cProps.array[i].identifier == MQTTPROPERTY_CODE_USER_PROPERTY) {
+                    std::string key(cProps.array[i].value.data.data,
+                                    cProps.array[i].value.data.len);
+                    std::string val(cProps.array[i].value.value.data,
+                                    cProps.array[i].value.value.len);
+                    inMsg.userProperties[key] = val;
+                }
             }
 
             handler(inMsg);

@@ -21,6 +21,20 @@ This design gives you complete flexibility to:
 - Configure MQTT client exactly as needed
 - Integrate with existing MQTT infrastructure
 
+### Why Users Implement `IMqttClient`?
+
+Many SDKs would embed an MQTT client internally, but this approach creates several problems in practice:
+
+1. **MQTT connections are heavyweight resources.** Each connection occupies a persistent TCP socket and maintains session state on the broker. If the SDK manages its own connection, your application ends up with two connections to the same broker — one for MCP, one for your business logic — wasting resources and complicating deployment.
+
+2. **Real-world applications already have an MQTT client.** MCP servers typically run alongside existing IoT or messaging workloads. By accepting a user-provided client, the SDK plugs into your existing infrastructure instead of competing with it. One client, one connection, shared across MCP and your custom topics.
+
+3. **Connection configuration varies widely.** TLS certificates, authentication credentials, proxy settings, reconnection strategies, and will messages all differ by deployment. Rather than exposing a bloated configuration surface, the SDK delegates these concerns entirely to you — configure your client however you need, then hand it to the SDK.
+
+4. **Testability.** Because `IMqttClient` is an interface, you can provide a mock implementation in tests without needing a real broker.
+
+In short, the `IMqttClient` interface keeps the SDK focused on MCP protocol logic while giving you full ownership of transport, lifecycle, and configuration.
+
 ## Features
 
 - **Service Discovery**: Automatically publishes server presence notifications

@@ -31,7 +31,7 @@ void signalHandler(int signum) {
 class PahoMqttClientAdapter : public IMqttClient, public mqtt::callback {
 public:
     PahoMqttClientAdapter(const std::string& brokerAddress, const std::string& clientId)
-        : clientId_(clientId) {
+        : clientId_(clientId), brokerAddress_(brokerAddress) {
         // Create MQTT 5.0 client
         mqtt::create_options createOpts(MQTTVERSION_5);
         client_ = std::make_unique<mqtt::async_client>(brokerAddress, clientId, createOpts);
@@ -72,6 +72,17 @@ public:
             props.add(mqtt::property(mqtt::property::USER_PROPERTY,
                 "MCP-COMPONENT-TYPE", "mcp-server"));
             connBuilder.properties(props);
+
+            // Enable SSL/TLS if the broker address uses a secure scheme
+            if (brokerAddress_.substr(0, 6) == "ssl://" ||
+                brokerAddress_.substr(0, 6) == "wss://" ||
+                brokerAddress_.substr(0, 7) == "mqtts://") {
+                auto sslOpts = mqtt::ssl_options_builder()
+                    .enable_server_cert_auth(true)
+                    .verify(true)
+                    .finalize();
+                connBuilder.ssl(sslOpts);
+            }
 
             auto connOpts = connBuilder.finalize();
             client_->connect(connOpts)->wait();
@@ -202,6 +213,7 @@ public:
 private:
     std::unique_ptr<mqtt::async_client> client_;
     std::string clientId_;
+    std::string brokerAddress_;
     std::mutex mutex_;
     MqttMessageHandler messageHandler_;
     std::function<void(const std::string&)> connectionLostCallback_;

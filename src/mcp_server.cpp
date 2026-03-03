@@ -46,6 +46,14 @@ bool McpServer::start(IMqttClient* mqttClient, const McpServerConfig& config) {
 
     MCP_LOG_INFO("Starting MCP server: serverId=" << serverId_ << ", serverName=" << serverName_);
 
+    // Set MQTT 5.0 CONNECT properties (called before setWill so reconnect applies both)
+    std::map<std::string, std::string> connectUserProps = {
+        {USER_PROP_COMPONENT_TYPE, COMPONENT_TYPE_SERVER}
+    };
+    mqttClient_->setConnectProperties(0, connectUserProps);
+    MCP_LOG_DEBUG("Set connect properties: SESSION_EXPIRY_INTERVAL=0, "
+              << USER_PROP_COMPONENT_TYPE << "=" << COMPONENT_TYPE_SERVER);
+
     // Set Will message for presence cleanup on unexpected disconnection
     std::string presenceTopic = getPresenceTopic();
     mqttClient_->setWill(presenceTopic, "", 1, true);

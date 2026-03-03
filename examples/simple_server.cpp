@@ -65,12 +65,16 @@ public:
                 connBuilder.will(willMsg);
             }
 
-            // Set MQTT 5.0 properties
-            mqtt::properties props;
-            props.add(mqtt::property(mqtt::property::SESSION_EXPIRY_INTERVAL, 0));
-            props.add(mqtt::property(mqtt::property::USER_PROPERTY,
-                "MCP-COMPONENT-TYPE", "mcp-server"));
-            connBuilder.properties(props);
+            // Set MQTT 5.0 CONNECT properties if configured via setConnectProperties()
+            if (connectPropsSet_) {
+                mqtt::properties props;
+                props.add(mqtt::property(mqtt::property::SESSION_EXPIRY_INTERVAL,
+                    sessionExpiryInterval_));
+                for (const auto& [key, value] : connectUserProperties_) {
+                    props.add(mqtt::property(mqtt::property::USER_PROPERTY, key, value));
+                }
+                connBuilder.properties(props);
+            }
 
             // Enable SSL/TLS if the broker address uses a secure scheme
             if (brokerAddress_.substr(0, 6) == "ssl://" ||
@@ -158,6 +162,13 @@ public:
         connectionLostCallback_ = callback;
     }
 
+    void setConnectProperties(uint32_t sessionExpiryInterval,
+                               const std::map<std::string, std::string>& userProperties) override {
+        sessionExpiryInterval_ = sessionExpiryInterval;
+        connectUserProperties_ = userProperties;
+        connectPropsSet_ = true;
+    }
+
     void setWill(const std::string& topic, const std::string& payload,
                  int qos, bool retained) override {
         willTopic_ = topic;
@@ -239,6 +250,10 @@ private:
     std::string willPayload_;
     int willQos_ = 1;
     bool willRetained_ = true;
+    // CONNECT properties (set by SDK via setConnectProperties())
+    uint32_t sessionExpiryInterval_ = 0;
+    std::map<std::string, std::string> connectUserProperties_;
+    bool connectPropsSet_ = false;
 };
 
 int main(int argc, char* argv[]) {

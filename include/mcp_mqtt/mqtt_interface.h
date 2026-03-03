@@ -107,6 +107,22 @@ public:
     virtual void setConnectionLostCallback(std::function<void(const std::string& reason)> callback) = 0;
 
     /**
+     * @brief Set MQTT 5.0 CONNECT packet properties.
+     *
+     * Called by the MCP SDK to configure protocol-required CONNECT properties
+     * such as Session Expiry Interval and User Properties (e.g. MCP-COMPONENT-TYPE).
+     *
+     * The implementation should store these values and apply them on the next
+     * connect/reconnect. This method is always called BEFORE setWill(), so there
+     * is no need to trigger a reconnect here — setWill() will handle that.
+     *
+     * @param sessionExpiryInterval Session Expiry Interval in seconds (0 = no persistence)
+     * @param userProperties User properties to include in the CONNECT packet
+     */
+    virtual void setConnectProperties(uint32_t sessionExpiryInterval,
+                                       const std::map<std::string, std::string>& userProperties) = 0;
+
+    /**
      * @brief Set the MQTT Will message for the connection.
      *
      * Called by the MCP SDK to configure the Will message. Per the MCP over MQTT
@@ -116,6 +132,9 @@ public:
      * The implementation should store these values and apply them on the next
      * connect/reconnect. If the client is already connected, use disconnect +
      * reconnect (or your library's equivalent) to apply the new Will.
+     *
+     * Note: setConnectProperties() is always called before this method, so the
+     * reconnect triggered here should also apply the stored connect properties.
      *
      * @param topic Will topic
      * @param payload Will payload (empty string to clear retained messages)

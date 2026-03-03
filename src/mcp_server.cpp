@@ -46,6 +46,11 @@ bool McpServer::start(IMqttClient* mqttClient, const McpServerConfig& config) {
 
     MCP_LOG_INFO("Starting MCP server: serverId=" << serverId_ << ", serverName=" << serverName_);
 
+    // Set Will message for presence cleanup on unexpected disconnection
+    std::string presenceTopic = getPresenceTopic();
+    mqttClient_->setWill(presenceTopic, "", 1, true);
+    MCP_LOG_DEBUG("Set Will message on topic: " << presenceTopic);
+
     // Register our message handler - SDK will filter MCP topics
     mqttClient_->setMessageHandler([this](const MqttIncomingMessage& msg) {
         handleIncomingMessage(msg);

@@ -159,6 +159,8 @@ public:
     std::string getClientId() const override { /* ... */ }
     void setMessageHandler(MqttMessageHandler handler) override { /* ... */ }
     void setConnectionLostCallback(std::function<void(const std::string&)> callback) override { /* ... */ }
+    void setWill(const std::string& topic, const std::string& payload,
+                 int qos, bool retained) override { /* ... */ }
 };
 ```
 
@@ -234,6 +236,8 @@ public:
     virtual std::string getClientId() const = 0;
     virtual void setMessageHandler(MqttMessageHandler handler) = 0;
     virtual void setConnectionLostCallback(std::function<void(const std::string&)> callback) = 0;
+    virtual void setWill(const std::string& topic, const std::string& payload,
+                         int qos, bool retained) = 0;
 };
 ```
 
@@ -407,16 +411,7 @@ Your MQTT client implementation must:
 1. **Use MQTT 5.0** - Required for user properties and No Local subscription option
 2. **Route all messages to the handler** - The SDK filters internally
 3. **Support No Local subscription option** - To prevent receiving own messages
-4. **Handle connection will message** - For presence cleanup on disconnect
-
-### Recommended Will Message Setup
-
-```cpp
-// Set will message to clear presence on unexpected disconnect
-std::string willTopic = "$mcp-server/presence/" + serverId + "/" + serverName;
-std::string willPayload = "";  // Empty payload clears retained message
-// Configure your MQTT client with this will message (QoS 1, retained)
-```
+4. **Implement `setWill()`** - The SDK calls this automatically during `start()` to set the Will message for presence cleanup. Your implementation should store the Will parameters and apply them by reconnecting to the broker (since MQTT Will messages must be set at connect time).
 
 ## License
 

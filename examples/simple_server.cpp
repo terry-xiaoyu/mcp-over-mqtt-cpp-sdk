@@ -45,8 +45,7 @@ public:
     }
 
     // Connect to broker (user manages this)
-    bool connect(const std::string& username = "", const std::string& password = "",
-                 const std::string& willTopic = "", const std::string& willPayload = "") {
+    bool connect(const std::string& username = "", const std::string& password = "") {
         try {
             auto connBuilder = mqtt::connect_options_builder()
                 .mqtt_version(MQTTVERSION_5)
@@ -60,9 +59,9 @@ public:
                 }
             }
 
-            // Set will message if provided
-            if (!willTopic.empty()) {
-                mqtt::message willMsg(willTopic, willPayload, 1, true);
+            // Set will message if configured via setWill()
+            if (!willTopic_.empty()) {
+                mqtt::message willMsg(willTopic_, willPayload_, willQos_, willRetained_);
                 connBuilder.will(willMsg);
             }
 
@@ -159,6 +158,24 @@ public:
         connectionLostCallback_ = callback;
     }
 
+    void setWill(const std::string& topic, const std::string& payload,
+                 int qos, bool retained) override {
+        willTopic_ = topic;
+        willPayload_ = payload;
+        willQos_ = qos;
+        willRetained_ = retained;
+
+        // If already connected, reconnect with the new Will message
+        if (client_->is_connected()) {
+            try {
+                client_->disconnect()->wait();
+                connect();
+            } catch (const mqtt::exception& e) {
+                std::cerr << "Reconnect with Will error: " << e.what() << std::endl;
+            }
+        }
+    }
+
     // mqtt::callback overrides
     void message_arrived(mqtt::const_message_ptr msg) override {
         MqttMessageHandler handler;
@@ -217,6 +234,11 @@ private:
     std::mutex mutex_;
     MqttMessageHandler messageHandler_;
     std::function<void(const std::string&)> connectionLostCallback_;
+    // Will message configuration (set by SDK via setWill())
+    std::string willTopic_;
+    std::string willPayload_;
+    int willQos_ = 1;
+    bool willRetained_ = true;
 };
 
 int main(int argc, char* argv[]) {
@@ -245,9 +267,7 @@ int main(int argc, char* argv[]) {
     // Step 1: Create and configure YOUR OWN MQTT client
     PahoMqttClientAdapter mqttClient(brokerAddress, serverId);
 
-    // Set will message for presence (required by MCP protocol)
-    std::string willTopic = "$mcp-server/presence/" + serverId + "/" + serverName;
-    if (!mqttClient.connect("", "", willTopic, "")) {
+    if (!mqttClient.connect()) {
         std::cerr << "Failed to connect to MQTT broker" << std::endl;
         return 1;
     }
@@ -361,7 +381,7 @@ int main(int argc, char* argv[]) {
 
     std::cout << "\nMCP server is running!" << std::endl;
     std::cout << "Control topic: $mcp-server/" << serverId << "/" << serverName << std::endl;
-    std::cout << "Presence topic: " << willTopic << std::endl;
+    std::cout << "Presence topic: $mcp-server/presence/" << serverId << "/" << serverName << std::endl;
     std::cout << "\nRegistered tools:" << std::endl;
     for (const auto& tool : mcpServer.getTools()) {
         std::cout << "  - " << tool.name << ": " << tool.description << std::endl;

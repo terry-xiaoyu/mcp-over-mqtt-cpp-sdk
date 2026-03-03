@@ -105,6 +105,25 @@ public:
      * @param callback Callback invoked when connection is lost
      */
     virtual void setConnectionLostCallback(std::function<void(const std::string& reason)> callback) = 0;
+
+    /**
+     * @brief Set the MQTT Will message for the connection.
+     *
+     * Called by the MCP SDK to configure the Will message. Per the MCP over MQTT
+     * protocol, the server MUST set a Will message so the broker clears the
+     * retained presence message on unexpected disconnection.
+     *
+     * The implementation should store these values and apply them on the next
+     * connect/reconnect. If the client is already connected, use disconnect +
+     * reconnect (or your library's equivalent) to apply the new Will.
+     *
+     * @param topic Will topic
+     * @param payload Will payload (empty string to clear retained messages)
+     * @param qos Will QoS level
+     * @param retained Will retain flag
+     */
+    virtual void setWill(const std::string& topic, const std::string& payload,
+                         int qos, bool retained) = 0;
 };
 
 /**

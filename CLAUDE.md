@@ -44,7 +44,7 @@ The SDK does NOT own the MQTT client. Users implement `IMqttClient` with their p
 
 ### Key Classes
 
-- **`IMqttClient`** ([include/mcp_mqtt/mqtt_interface.h](include/mcp_mqtt/mqtt_interface.h)) — Interface users implement to bridge their MQTT library. Must support MQTT 5.0 (user properties, no-local subscriptions).
+- **`IMqttClient`** ([include/mcp_mqtt/mqtt_interface.h](include/mcp_mqtt/mqtt_interface.h)) — Interface users implement to bridge their MQTT library. Must support MQTT 5.0 (user properties, no-local subscriptions). Includes `setWill()` which the SDK calls automatically during `start()` to configure the Will message for presence cleanup.
 - **`McpServer`** ([include/mcp_mqtt/mcp_server.h](include/mcp_mqtt/mcp_server.h), [src/mcp_server.cpp](src/mcp_server.cpp)) — Main class. Manages lifecycle (start/stop), client sessions, message routing across control/RPC/presence topics, and dispatches tool calls.
 - **`ToolManager`** ([include/mcp_mqtt/tool_manager.h](include/mcp_mqtt/tool_manager.h), [src/tool_manager.cpp](src/tool_manager.cpp)) — Thread-safe registry mapping tool names to `ToolHandler` callbacks.
 - **`JsonRpcRequest`/`JsonRpcResponse`** ([include/mcp_mqtt/json_rpc.h](include/mcp_mqtt/json_rpc.h), [src/json_rpc.cpp](src/json_rpc.cpp)) — JSON-RPC 2.0 serialization/deserialization.
